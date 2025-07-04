@@ -15,6 +15,12 @@ const Settings = ({
   handleSaveClaudeApiKey,
   claudeApiError,
   loadingTodoistTasks,
+  hevyApiKey,
+  setHevyApiKey,
+  handleSaveHevyApiKey,
+  fetchHevyWorkouts,
+  hevyApiError,
+  loadingHevyWorkouts,
 }) => {
 
   return (
@@ -77,6 +83,36 @@ const Settings = ({
             </button>
           )}
           {googleCalendarError && <p className="text-red-500 mt-2">Error: {googleCalendarError.message}</p>}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Hevy Integration</h3>
+        <p className="text-gray-600 mb-4">Enter your Hevy API key to sync workouts.</p>
+        <div className="flex items-end space-x-3">
+          <input
+            type="text"
+            placeholder="Your Hevy API Key"
+            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={hevyApiKey}
+            onChange={(e) => setHevyApiKey(e.target.value)}
+          />
+          <button
+            onClick={handleSaveHevyApiKey}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2"
+          >
+            Save and Test Connection
+          </button>
+          {hevyApiKey && (
+            <button
+              onClick={() => fetchHevyWorkouts(hevyApiKey)}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={loadingHevyWorkouts}
+            >
+              {loadingHevyWorkouts ? 'Syncing...' : 'Force Sync'}
+            </button>
+          )}
+          {hevyApiError && <p className="text-red-500 mt-2">Error: {hevyApiError.message}</p>}
         </div>
       </div>
 
