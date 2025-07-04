@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft, Calendar, CheckSquare, Plus, Utensils, Dumbbell, MessageCircle } from 'lucide-react';
 import OutlinerEditor from './OutlinerEditor';
-import { mockRecipes, mockWorkouts } from '../constants/mockData';
+import { mockRecipes } from '../constants/mockData';
 
 function Dashboard({
   currentView,
@@ -17,6 +17,7 @@ function Dashboard({
   setScheduledRecipes,
   scheduledWorkouts = {},
   setScheduledWorkouts,
+  hevyWorkouts = [],
   selectedDate,
   setSelectedDate,
   setShowAddTaskModal
@@ -173,7 +174,7 @@ function Dashboard({
                 </div>
               ) : (
                 dayWorkouts.map((workoutId) => {
-                  const workout = mockWorkouts.find((w) => w.id === workoutId);
+                  const workout = hevyWorkouts.find((w) => w.id === workoutId);
                   return workout ? (
                     <div
                       key={workout.id}

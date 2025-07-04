@@ -11,6 +11,8 @@ REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
 REACT_APP_GOOGLE_API_KEY=your-google-api-key
 # optional Anthropic API key
 REACT_APP_ANTHROPIC_API_KEY=your-anthropic-key
+# optional Hevy API key
+REACT_APP_HEVY_API_KEY=your-hevy-api-key
 ```
 
 ## Development

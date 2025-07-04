@@ -15,6 +15,7 @@ import { ClaudeProvider } from "./hooks/useClaudeIntegration";
 // Import services
 import TodoistService from "./services/TodoistService";
 import GoogleCalendarService from "./services/GoogleCalendarService";
+import HevyService from "./services/HevyService";
 
 // Import components
 import Sidebar from "./components/common/Sidebar";
@@ -28,7 +29,7 @@ import EditEventModal from "./components/events/EditEventModal";
 // Import utilities and constants
 import { toDateKey, parseDateKey, formatWeekRange, getWeekDates } from "./utils/dateUtils";
 import { filterTasksByString } from "./utils/taskUtils";
-import { mockRecipes, mockWorkouts } from "./constants/mockData";
+import { mockRecipes } from "./constants/mockData";
 
 // Debug flag
 const DEBUG = false;
@@ -49,17 +50,23 @@ function App() {
   const [claudeApiKey, setClaudeApiKey] = useState(() => {
     return localStorage.getItem("claude_api_key") || "";
   });
+  const [hevyApiKey, setHevyApiKey] = useState(() => {
+    return localStorage.getItem("hevyApiKey") || process.env.REACT_APP_HEVY_API_KEY || "";
+  });
 
   // Data states
   const [todoistTasks, setTodoistTasks] = useState([]);
   const [googleCalendarEvents, setGoogleCalendarEvents] = useState([]);
   const [availableProjects, setAvailableProjects] = useState([]);
+  const [hevyWorkouts, setHevyWorkouts] = useState([]);
 
   // Loading and error states
   const [loadingTodoistTasks, setLoadingTodoistTasks] = useState(false);
   const [loadingGoogleCalendarEvents, setLoadingGoogleCalendarEvents] = useState(false);
+  const [loadingHevyWorkouts, setLoadingHevyWorkouts] = useState(false);
   const [todoistError, setTodoistError] = useState(null);
   const [googleCalendarError, setGoogleCalendarError] = useState(null);
+  const [hevyError, setHevyError] = useState(null);
   const [claudeApiError, setClaudeApiError] = useState(null);
 
   // Week navigation state
@@ -166,6 +173,26 @@ function App() {
     [currentWeekStart, setLoadingGoogleCalendarEvents, setGoogleCalendarError]
   );
 
+  const fetchHevyWorkouts = useCallback(
+    async (token) => {
+      if (!token) return;
+
+      setLoadingHevyWorkouts(true);
+      setHevyError(null);
+      try {
+        const workouts = await HevyService.getWorkouts(token);
+        setHevyWorkouts(workouts);
+        localStorage.setItem("hevyApiKey", token);
+      } catch (error) {
+        setHevyError(error);
+        console.error("Failed to fetch Hevy workouts:", error);
+      } finally {
+        setLoadingHevyWorkouts(false);
+      }
+    },
+    []
+  );
+
   
 
   useEffect(() => {
@@ -188,6 +215,12 @@ function App() {
     };
     initGoogleCalendar();
   }, [googleCalendarToken, fetchGoogleCalendarEvents]);
+
+  useEffect(() => {
+    if (hevyApiKey) {
+      fetchHevyWorkouts(hevyApiKey);
+    }
+  }, [hevyApiKey, fetchHevyWorkouts]);
 
   // Polling for Todoist tasks every 5 minutes
   useEffect(() => {
@@ -217,6 +250,17 @@ function App() {
     return () => clearInterval(pollingInterval);
   }, [googleCalendarToken, currentWeekStart, fetchGoogleCalendarEvents]); // Re-fetch if week changes
 
+  // Polling for Hevy workouts every 5 minutes
+  useEffect(() => {
+    let pollingInterval;
+    if (hevyApiKey) {
+      pollingInterval = setInterval(() => {
+        fetchHevyWorkouts(hevyApiKey);
+      }, 5 * 60 * 1000);
+    }
+    return () => clearInterval(pollingInterval);
+  }, [hevyApiKey, fetchHevyWorkouts]);
+
   const handleGoogleAuthClick = async () => {
     try {
       const token = await GoogleCalendarService.handleAuthClick();
@@ -243,6 +287,14 @@ function App() {
       fetchTodoistTasks(todoistToken);
     } else {
       setTodoistError(new Error("Please enter a Todoist API token."));
+    }
+  };
+
+  const handleSaveHevyApiKey = () => {
+    if (hevyApiKey) {
+      fetchHevyWorkouts(hevyApiKey);
+    } else {
+      setHevyError(new Error("Please enter a Hevy API key."));
     }
   };
 
@@ -867,7 +919,7 @@ function App() {
             >
               <div className="space-y-2">
                 {dayWorkouts.map((workoutId, index) => {
-                  const workout = mockWorkouts.find((w) => w.id === workoutId);
+                  const workout = hevyWorkouts.find((w) => w.id === workoutId);
                   return workout ? (
                     <DraggableWorkout
                       key={workout.id}
@@ -929,10 +981,10 @@ function App() {
                   className="w-80 bg-white rounded-xl p-4 shadow-sm border"
                 >
                   <h3 className="font-semibold text-gray-900 mb-4">
-                    Available Workouts ({mockWorkouts.length})
+                    Available Workouts ({hevyWorkouts.length})
                   </h3>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {mockWorkouts.map((workout, index) => (
+                    {hevyWorkouts.map((workout, index) => (
                       <DraggableWorkout
                         key={workout.id}
                         workout={workout}
@@ -974,7 +1026,7 @@ function App() {
                         index={index}
                       />
                     ))}
-                    {mockWorkouts.map((workout, index) => (
+                    {hevyWorkouts.map((workout, index) => (
                       <DraggableWorkout
                         key={workout.id}
                         workout={workout}
@@ -1283,7 +1335,7 @@ function App() {
                 </h4>
                 <div className="space-y-1">
                   {dayWorkouts.map((workoutId, index) => {
-                    const workout = mockWorkouts.find(
+                    const workout = hevyWorkouts.find(
                       (w) => w.id === workoutId,
                     );
                     return workout ? (
@@ -1570,6 +1622,7 @@ function App() {
             handleTaskCompletionToggle={handleTaskCompletionToggle}
             scheduledRecipes={scheduledRecipes}
             scheduledWorkouts={scheduledWorkouts}
+            hevyWorkouts={hevyWorkouts}
             dayTaskFilter={dayTaskFilter}
             setDayTaskFilter={setDayTaskFilter}
             setShowAddTaskModal={setShowAddTaskModal}
@@ -1632,6 +1685,12 @@ function App() {
             handleSaveClaudeApiKey={handleSaveClaudeApiKey}
             claudeApiError={claudeApiError}
             loadingTodoistTasks={loadingTodoistTasks}
+            hevyApiKey={hevyApiKey}
+            setHevyApiKey={setHevyApiKey}
+            handleSaveHevyApiKey={handleSaveHevyApiKey}
+            fetchHevyWorkouts={fetchHevyWorkouts}
+            hevyApiError={hevyError}
+            loadingHevyWorkouts={loadingHevyWorkouts}
           />
         );
       default:
@@ -1832,7 +1891,7 @@ function App() {
         if (destination.droppableId === "unscheduled-all") {
           // Dragged back to sidebar - remove from all schedules
           const isRecipe = mockRecipes.some((r) => r.id === draggableId);
-          const isWorkout = mockWorkouts.some((w) => w.id === draggableId);
+          const isWorkout = hevyWorkouts.some((w) => w.id === draggableId);
 
           if (isRecipe) {
             setScheduledRecipes((prev) => {
@@ -2002,12 +2061,14 @@ function App() {
     tasks,
     scheduledRecipes,
     scheduledWorkouts,
+    hevyWorkouts,
     scratchpadContent,
     dayTaskFilter,
     activeFilters,
     taskFilter,
     todoistToken,
     googleCalendarToken,
+    hevyApiKey,
     availableProjects,
     currentWeekStart
   };
@@ -2026,6 +2087,7 @@ function App() {
     handleDeleteTask,
     handleTaskCompletionToggle,
     fetchTodoistTasks,
+    fetchHevyWorkouts,
     navigateWeek: navigateWeek
   };
 
