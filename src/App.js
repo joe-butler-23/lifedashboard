@@ -2,7 +2,7 @@
 // The code modification enhances Todoist integration by adding token validation and improved error logging.
 
 import React, { useState, useEffect, useCallback } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Calendar,
   CheckSquare,
@@ -1982,7 +1982,7 @@ function App() {
         console.error("Error handling task drop:", error);
       }
 
-      // Final catch-all to prevent react-beautiful-dnd errors for unhandled draggable types
+      // Final catch-all to prevent @hello-pangea/dnd errors for unhandled draggable types
       console.log("Reached end of onDragEnd without explicit handling for:", draggableId);
       console.log("This indicates an unhandled draggable type that should be addressed.");
       console.log("onDragEnd finished.");
