@@ -1655,9 +1655,12 @@ function App() {
 
   const onDragEnd = React.useCallback(
     (result) => {
+      console.log("onDragEnd started:", result);
       const { destination, draggableId, source } = result;
 
-      if (!destination) {
+      // Early return for invalid drops
+      if (!destination || !draggableId || !source) {
+        console.log("Invalid drop, returning.");
         return;
       }
 
@@ -1666,6 +1669,16 @@ function App() {
         destination.droppableId === source.droppableId &&
         destination.index === source.index
       ) {
+        console.log("Dropped in same position, returning.");
+        return;
+      }
+
+      // Handle Google Calendar events - these are draggable but not handled by other logic
+      if (draggableId.startsWith("event-")) {
+        console.log("Dragged a Google Calendar event:", draggableId);
+        // For now, we just acknowledge the drag to prevent R-B-D errors.
+        // Actual event rescheduling via Google Calendar API would go here.
+        console.log("Google Calendar event drag handled, returning.");
         return;
       }
 
@@ -1904,6 +1917,8 @@ function App() {
             newScheduled[dateKey][mealType] = targetArray;
             return newScheduled;
           });
+          console.log("Recipe scheduled (all mode), returning.");
+          return;
         } else if (parts.length >= 4 && parts[3] === "workouts") {
           // Workout drop (e.g., "2025-01-01-workouts")
           const dateKey = `${parts[0]}-${parts[1]}-${parts[2]}`;
@@ -1926,6 +1941,8 @@ function App() {
             newScheduled[dateKey] = targetArray;
             return newScheduled;
           });
+          console.log("Workout scheduled (all mode), returning.");
+          return;
         } else {
           try {
             // Task drop to a date
@@ -1964,6 +1981,11 @@ function App() {
       } catch (error) {
         console.error("Error handling task drop:", error);
       }
+
+      // Final catch-all to prevent react-beautiful-dnd errors for unhandled draggable types
+      console.log("Reached end of onDragEnd without explicit handling for:", draggableId);
+      console.log("This indicates an unhandled draggable type that should be addressed.");
+      console.log("onDragEnd finished.");
     },
     [
       plannerMode,
