@@ -7,19 +7,25 @@ class GoogleCalendarService {
   static gapi = null;
 
   static async initClient() {
-    if (window.gapi) {
-      this.gapi = window.gapi;
-      await this.gapi.load('client:auth2', async () => {
-        await this.gapi.client.init({
-          apiKey: API_KEY,
-          clientId: CLIENT_ID,
-          discoveryDocs: [DISCOVERY_DOC],
-          scope: SCOPES
-        });
-      });
-    } else {
+    if (!window.gapi) {
       throw new Error('Google API not loaded');
     }
+
+    this.gapi = window.gapi;
+
+    await new Promise((resolve, reject) => {
+      this.gapi.load('client:auth2', () => {
+        this.gapi.client
+          .init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: [DISCOVERY_DOC],
+            scope: SCOPES,
+          })
+          .then(resolve)
+          .catch(reject);
+      });
+    });
   }
 
   static async handleAuthClick() {
